@@ -1,0 +1,10 @@
+ -r base.txt
+pytest-django
+factory-boy
+pytest-asyncio
+pytest-cov
+channels[daphne]
+django-extensions
+ipython
+black
+mypy
