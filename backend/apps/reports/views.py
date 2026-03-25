@@ -13,6 +13,10 @@ from apps.employees.models import Employee
 from apps.users.permissions import IsManager
 
 
+def _has_task_field(field_name):
+    return any(field.name == field_name for field in Task._meta.get_fields())
+
+
 class OverviewReportView(APIView):
     """
     Get high-level overview statistics.
@@ -29,21 +33,27 @@ class OverviewReportView(APIView):
         overdue_tasks = Task.objects.filter(
             is_deleted=False,
             deadline__lt=timezone.now(),
-            status__in=['pending', 'in_progress']
-        ).count()
+        ).exclude(status='completed').count()
         
         # Active projects (not completed/on_hold)
         active_projects = Project.objects.filter(
-            status__in=['planning', 'in_progress']
+            status='active'
         ).count()
         
         # Completed tasks this month
         month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        completed_this_month = Task.objects.filter(
-            is_deleted=False,
-            status='completed',
-            updated_at__gte=month_start
-        ).count()
+        if _has_task_field('updated_at'):
+            completed_this_month = Task.objects.filter(
+                is_deleted=False,
+                status='completed',
+                updated_at__gte=month_start
+            ).count()
+        else:
+            # Fallback for schemas without timestamp fields.
+            completed_this_month = Task.objects.filter(
+                is_deleted=False,
+                status='completed'
+            ).count()
         
         return Response({
             'total_users': total_users,
@@ -74,7 +84,7 @@ class TasksByStatusReportView(APIView):
         result = {item['status']: item['count'] for item in status_counts}
         
         # Ensure all statuses are present (even with 0 count)
-        all_statuses = ['pending', 'in_progress', 'completed', 'on_hold']
+        all_statuses = ['pending', 'in_progress', 'completed', 'blocked']
         for status in all_statuses:
             if status not in result:
                 result[status] = 0
@@ -161,7 +171,7 @@ class ProjectProgressReportView(APIView):
                 )
             )
         ).filter(
-            status__in=['planning', 'in_progress']
+            status__in=['active', 'paused']
         ).order_by('-completed_tasks')
         
         result = []
@@ -194,6 +204,9 @@ class WeeklyCompletionsReportView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
+        if not _has_task_field('updated_at'):
+            return Response([])
+
         # Get date 7 days ago
         week_ago = timezone.now() - timedelta(days=7)
         
@@ -300,7 +313,7 @@ class MyDashboardView(APIView):
             my_projects = Project.objects.filter(manager=user)
             my_projects_summary = {
                 'total': my_projects.count(),
-                'active': my_projects.filter(status__in=['planning', 'in_progress']).count(),
+                'active': my_projects.filter(status='active').count(),
                 'completed': my_projects.filter(status='completed').count(),
             }
         else:
@@ -308,7 +321,7 @@ class MyDashboardView(APIView):
             my_projects = Project.objects.filter(members=user)
             my_projects_summary = {
                 'total': my_projects.count(),
-                'active': my_projects.filter(status__in=['planning', 'in_progress']).count(),
+                'active': my_projects.filter(status='active').count(),
             }
         
         # Recent notifications
