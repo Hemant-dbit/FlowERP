@@ -20,11 +20,15 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_members_count(self, obj):
         return obj.members.count()
     
-    def validate_end_date(self, value):
-        start_date = self.initial_data.get('start_date')
-        if start_date and value and value < start_date:
-            raise serializers.ValidationError("End date cannot be before start date.")
-        return value
+    def validate(self, attrs):
+        start_date = attrs.get('start_date')
+        end_date = attrs.get('end_date')
+
+        # Compare parsed date objects (not raw request strings) to avoid TypeError.
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError({"end_date": "End date cannot be before start date."})
+
+        return attrs
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
