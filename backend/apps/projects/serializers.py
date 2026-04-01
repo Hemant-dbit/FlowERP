@@ -7,6 +7,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     """Serializer for Project model with full details."""
     manager_detail = UserSerializer(source='manager', read_only=True)
     members_count = serializers.SerializerMethodField()
+    members = serializers.PrimaryKeyRelatedField(
+        queryset=__import__('django.contrib.auth', fromlist=['get_user_model']).get_user_model().objects.all(),
+        many=True,
+        required=False,
+        allow_empty=True
+    )
     
     class Meta:
         model = Project

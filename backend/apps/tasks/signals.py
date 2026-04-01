@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -6,6 +6,22 @@ from django.utils import timezone
 
 from apps.tasks.models import Task
 from apps.notifications.models import Notification
+
+
+@receiver(pre_save, sender=Task)
+def capture_old_assigned_to(sender, instance, **kwargs):
+    """
+    Capture the old assigned_to value BEFORE the save.
+    Store it on the instance so we can check for changes in post_save.
+    """
+    if instance.pk:
+        try:
+            old_instance = Task.objects.get(pk=instance.pk)
+            instance._old_assigned_to = old_instance.assigned_to
+        except Task.DoesNotExist:
+            instance._old_assigned_to = None
+    else:
+        instance._old_assigned_to = None
 
 
 @receiver(post_save, sender=Task)
@@ -39,31 +55,29 @@ def notify_task_assigned(sender, instance, created, **kwargs):
     
     # If task is reassigned to a different user
     elif not created and instance.assigned_to:
-        # Check if assigned_to(user) changed
-        try:
-            old_instance = Task.objects.get(pk=instance.pk)
-            if old_instance.assigned_to != instance.assigned_to:
-                # Create notification
-                notification = Notification.objects.create(
-                    user=instance.assigned_to,
-                    message=f'You have been assigned task: {instance.title}',
-                    type='task_assigned'
+        old_assigned_to = getattr(instance, '_old_assigned_to', None)
+        
+        # Check if assigned_to actually changed
+        if old_assigned_to != instance.assigned_to:
+            # Create notification
+            notification = Notification.objects.create(
+                user=instance.assigned_to,
+                message=f'You have been assigned task: {instance.title}',
+                type='task_assigned'
+            )
+            
+            # Send WebSocket notification
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'user_{instance.assigned_to.id}',
+                    {
+                        'type': 'task_assigned',
+                        'message': f'Task reassigned to you: {instance.title}',
+                        'task_id': instance.id,
+                        'task_title': instance.title,
+                        'timestamp': timezone.now().isoformat(),
+                    }
                 )
-                
-                # Send WebSocket notification
-                if channel_layer:
-                    async_to_sync(channel_layer.group_send)(
-                        f'user_{instance.assigned_to.id}',
-                        {
-                            'type': 'task_assigned',
-                            'message': f'Task reassigned to you: {instance.title}',
-                            'task_id': instance.id,
-                            'task_title': instance.title,
-                            'timestamp': timezone.now().isoformat(),
-                        }
-                    )
-        except Task.DoesNotExist:
-            pass
 
 
 @receiver(post_save, sender=Task)

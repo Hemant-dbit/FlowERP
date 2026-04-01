@@ -241,26 +241,29 @@ class DepartmentSummaryReportView(APIView):
     permission_classes = [IsManager]
     
     def get(self, request):
-        # Count tasks assigned to users in each department
+        # Count tasks assigned to employees in each department
         department_stats = Department.objects.annotate(
-            employee_count=Count('users', filter=Q(users__role='employee')),
+            employee_count=Count('employees', filter=Q(employees__user__role='employee'), distinct=True),
             total_tasks=Count(
-                'users__assigned_tasks',
-                filter=Q(users__assigned_tasks__is_deleted=False)
+                'employees__user__assigned_tasks',
+                filter=Q(employees__user__assigned_tasks__is_deleted=False),
+                distinct=True
             ),
             completed_tasks=Count(
-                'users__assigned_tasks',
+                'employees__user__assigned_tasks',
                 filter=Q(
-                    users__assigned_tasks__is_deleted=False,
-                    users__assigned_tasks__status='completed'
-                )
+                    employees__user__assigned_tasks__is_deleted=False,
+                    employees__user__assigned_tasks__status='completed'
+                ),
+                distinct=True
             ),
             active_tasks=Count(
-                'users__assigned_tasks',
+                'employees__user__assigned_tasks',
                 filter=Q(
-                    users__assigned_tasks__is_deleted=False,
-                    users__assigned_tasks__status__in=['pending', 'in_progress']
-                )
+                    employees__user__assigned_tasks__is_deleted=False,
+                    employees__user__assigned_tasks__status__in=['pending', 'in_progress']
+                ),
+                distinct=True
             )
         ).order_by('-total_tasks')
         
