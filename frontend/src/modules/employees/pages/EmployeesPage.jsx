@@ -82,23 +82,37 @@ export default function EmployeesPage() {
 
   return (
     <div className="employees-page">
-      <div className="employees-header">
-        <div>
-          <h1>Employees</h1>
-          <p>{headerSummary}</p>
-        </div>
-
-        <div className="employees-header-actions">
-          <button onClick={() => fetchEmployees()} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: 0 }}>
+        <Link
+          to={dashboardPath}
+          className="back-dashboard-btn"
+          style={{
+            padding: '0.45rem',
+            background: 'none',
+            color: '#3730a3',
+            border: 'none',
+            fontSize: '1.7rem',
+            margin: 0,
+            borderRadius: '50%',
+            minWidth: 0,
+            minHeight: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Back to Dashboard"
+        >
+          <span style={{ fontWeight: 700, fontSize: '1.7rem', lineHeight: 1 }}>&#8592;</span>
+        </Link>
+        <h1 style={{ margin: 0, fontSize: '2rem', lineHeight: 1.1 }}>Employees</h1>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: 0 }}>
+        <p style={{ margin: 0, fontSize: '1.08rem', color: '#555', flex: 1 }}>{headerSummary}</p>
+        {canManage ? (
+          <button type="button" className="main-action-btn" onClick={openCreate} disabled={saving}>
+            New Employee
           </button>
-          <Link to={dashboardPath}>Dashboard</Link>
-          {canManage ? (
-            <button type="button" onClick={openCreate} disabled={saving}>
-              New Employee
-            </button>
-          ) : null}
-        </div>
+        ) : null}
       </div>
 
       {error ? (

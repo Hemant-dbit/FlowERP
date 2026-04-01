@@ -158,17 +158,22 @@ export default function DashboardContent({ title, subtitle, showManagerWidgets =
             <Link to="/tasks" className="sidebar-link-item">
               Tasks
             </Link>
-            <Link to="/notifications" className="sidebar-link-item">
+            {/* <Link to="/notifications" className="sidebar-link-item">
               Notifications
-            </Link>
-            <Link to="/activity-logs" className="sidebar-link-item">
+            </Link> */}
+            {/* <Link to="/activity-logs" className="sidebar-link-item">
               Activity Logs
-            </Link>
-            {isManagerOrAdmin ? (
-              <Link to="/employees" className="sidebar-link-item">
-                Employees
-              </Link>
-            ) : null}
+            </Link> */}
+            {isManagerOrAdmin && (
+              <>
+                <Link to="/employees" className="sidebar-link-item">
+                  Employees
+                </Link>
+                <Link to="/reports" className="sidebar-link-item">
+                  Reports
+                </Link>
+              </>
+            )}
           </div>
         </aside>
 
