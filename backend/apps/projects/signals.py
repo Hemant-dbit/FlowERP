@@ -34,15 +34,21 @@ def notify_member_added_to_project(sender, instance, action, pk_set, **kwargs):
                 
                 # Send real-time WebSocket notification
                 if channel_layer:
-                    async_to_sync(channel_layer.group_send)(
-                        f'user_{user.id}',
-                        {
-                            'type': 'task_assigned',
-                            'message': f'You have been added to project: {instance.name}',
-                            'project_id': instance.id,
-                            'project_name': instance.name,
-                            'timestamp': timezone.now().isoformat(),
-                        }
-                    )
+                    try:
+                        async_to_sync(channel_layer.group_send)(
+                            f'user_{user.id}',
+                            {
+                                'type': 'task_assigned',
+                                'message': f'You have been added to project: {instance.name}',
+                                'project_id': instance.id,
+                                'project_name': instance.name,
+                                'timestamp': timezone.now().isoformat(),
+                            }
+                        )
+                    except Exception as e:
+                        # Log but don't fail - Redis/WebSocket is non-critical
+                        import logging
+                        logger = logging.getLogger('projects.signals')
+                        logger.warning(f'Failed to send WebSocket notification: {str(e)}')
             except User.DoesNotExist:
                 pass
