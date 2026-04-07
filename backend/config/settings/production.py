@@ -11,8 +11,5 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 3600
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-# WhiteNoise for static files (ensure middleware ordering)
-MIDDLEWARE = ["django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware"] + MIDDLEWARE
-
 # Static files - ensure collectstatic is run in production
 STATIC_ROOT = os.path.join(Path(__file__).resolve().parent.parent, "staticfiles")

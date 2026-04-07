@@ -12,3 +12,4 @@ Pillow==10.*
 django-cors-headers==4.*
 daphne==4.*
 gunicorn==21.*
+whitenoise==6.*
