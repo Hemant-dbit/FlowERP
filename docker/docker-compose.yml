@@ -1,9 +1,9 @@
-version: '3.8'
+version: "3.8"
 services:
   postgres:
     image: postgres:15
     restart: unless-stopped
-    environment: 
+    environment:
       POSTGRES_DB: flowerp
       POSTGRES_USER: flowerp
       POSTGRES_PASSWORD: flowerp_pass
@@ -11,12 +11,46 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
       - "6379:6379"
+
+  # Celery Worker - processes background tasks
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - ..:/app
+    environment:
+      - DATABASE_URL=postgresql://flowerp:flowerp_pass@postgres:5432/flowerp
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Celery Beat - scheduler for periodic tasks
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - ..:/app
+    environment:
+      - DATABASE_URL=postgresql://flowerp:flowerp_pass@postgres:5432/flowerp
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
 
 volumes:
   pgdata:
