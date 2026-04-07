@@ -1,98 +1,266 @@
 # FlowERP - Internal Workflow & Project Management System
 
-Real-time ERP-style backend system built with Django, DRF, Channels, and Celery.
+A real-time, high-performance ERP backend and frontend system. Designed to handle enterprise-level internal workflows, featuring a robust architecture that balances real-time communication, background task processing, and strict Role-Based Access Control (RBAC).
+
+🚀 **Live Demo**: https://flow-erp-seven.vercel.app/
+
+---
+
+## 🧪 Demo Credentials
+
+For quick exploration of the platform's RBAC features, use these pre-configured test accounts:
+
+| Role            | Username     | Password   | Access Level                       |
+| --------------- | ------------ | ---------- | ---------------------------------- |
+| Administrator   | admin        | Admin@123   | Full system configuration & Users  |
+| Project Manager | manager_user | Manager@123 | Project creation & Task assignment |
+| Employee        | staff_user   | Staff@123   | Personal task tracking             |
+
+---
+
+## 📦 Tech Stack
+
+### Backend
+
+- **Framework**: Django 4.2 / Django REST Framework (DRF)
+- **Real-time**: Django Channels (WebSockets)
+- **Database**: PostgreSQL 15 (Production) / SQLite (Dev)
+- **Cache & Broker**: Redis 7
+- **Task Queue**: Celery 5 + Celery Beat (Scheduled tasks)
+- **Auth**: JWT (SimpleJWT)
+- **Production**: Gunicorn + WhiteNoise
+
+### Frontend
+
+- **Framework**: React 18 (Vite)
+- **State Management**: Zustand
+- **Styling**: Tailwind CSS
+- **API Client**: Axios
+
+---
 
 ## 📁 Project Structure
 
 ```
 FlowERP/
-├── backend/          # Django REST API + WebSockets
-│   ├── apps/        # Django applications (users, projects, tasks, etc.)
-│   ├── config/      # Django settings and configuration
-│   ├── docker/      # Docker Compose for PostgreSQL + Redis
-│   └── manage.py    # Django management script
+├── backend/
+│   ├── apps/
+│   │   ├── users/              # User & Dept management + Auth
+│   │   ├── projects/           # Project CRUD & Management
+│   │   ├── tasks/              # Task Management + Celery Tasks
+│   │   ├── notifications/      # WebSocket Real-time Notifications
+│   │   ├── activity_logs/      # Audit Trail & Activity Tracking
+│   │   ├── reports/            # Analytics & Report Generation
+│   │   └── employees/          # Employee Data Management
+│   ├── config/
+│   │   ├── settings/           # Base, Development, Production settings
+│   │   ├── celery.py           # Celery Configuration & Beat schedule
+│   │   ├── asgi.py             # ASGI (WebSocket support)
+│   │   ├── wsgi.py             # WSGI (Production)
+│   │   └── urls.py             # URL Routing
+│   ├── requirements/
+│   │   ├── base.txt            # Core dependencies
+│   │   ├── development.txt     # Dev tools
+│   │   └── production.txt      # Prod optimizations
+│   ├── Dockerfile              # Backend Docker image
+│   ├── manage.py               # Django Management CLI
+│   └── .env.example            # Environment variables template
 │
-└── frontend/        # Future frontend application (React/Vue)
+├── frontend/
+│   ├── src/
+│   │   ├── modules/            # Feature-based modules
+│   │   │   ├── auth/          # Authentication flows
+│   │   │   ├── dashboard/     # Dashboard views
+│   │   │   ├── projects/      # Project pages
+│   │   │   ├── tasks/         # Task management UI
+│   │   │   └── reports/       # Analytics views
+│   │   ├── routes/            # Route definitions
+│   │   ├── services/          # API client services
+│   │   ├── shared/            # Reusable components
+│   │   └── app/               # Event bus & config
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── .env.example
+│
+├── docker/
+│   ├── docker-compose.yml      # PostgreSQL, Redis, Celery services
+│   └── Dockerfile.celery       # Celery worker/beat image
+│
+├── .gitignore
+└── README.md
 ```
+
+---
+## 🏗️ System Architecture
+
+- Django handles REST APIs
+- Channels handles WebSocket connections
+- Redis acts as message broker
+- Celery processes background tasks
 
 ## 🚀 Quick Start
 
-### Backend Setup
+### 1. Clone Repository
 
-```powershell
-# Navigate to backend
+```bash
+git clone https://github.com/Hemant-dbit/FlowERP.git
+cd FlowERP
+```
+
+### 2. Backend Setup
+
+```bash
 cd backend
 
-# Activate virtual environment
-.\.venv\Scripts\Activate.ps1
+# Initialize Virtual Environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .\.venv\Scripts\Activate.ps1
 
-# Run migrations
+# Install Dependencies
+pip install -r requirements/development.txt
+
+# Environment Configuration
+cp .env.example .env
+
+
+# Database Migrations
 python manage.py migrate
 
-# Create superuser
+# Create Superuser
 python manage.py createsuperuser
 
-# Start development server
+# Collect Static Files
+python manage.py collectstatic --noinput
+
+# Start Server
 python manage.py runserver 8000
 ```
 
-### Docker Services
+Access at: **http://localhost:8000**
 
-```powershell
-# Start PostgreSQL + Redis
-docker compose -f backend/docker/docker-compose.yml up -d
+### 3. Frontend Setup
 
-# Stop services
-docker compose -f backend/docker/docker-compose.yml down
+```bash
+cd ../frontend
+
+# Install Dependencies
+npm install
+
+# Start Development Server
+npm run dev
 ```
 
-## 🔗 API Endpoints
+Access at: **http://localhost:5173**
 
-- **Authentication**: `http://localhost:8000/api/v1/auth/`
-  - `POST /login/` - Get JWT tokens
-  - `POST /register/` - Create new user
-  - `GET /me/` - Get current user profile
-  - `POST /logout/` - Logout (blacklist token)
+---
 
-- **Admin Panel**: `http://localhost:8000/admin/`
 
-## 🔐 Test Credentials
 
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Role**: `admin`
+## ⚙️ Infrastructure (Docker)
 
-## 🛠️ Tech Stack
+### Start All Services
 
-### Backend
+```bash
+# From project root
+docker compose -f docker/docker-compose.yml up -d
+```
 
-- **Framework**: Django 4.2, Django REST Framework
-- **Database**: PostgreSQL 15 (Docker)
-- **Cache/Broker**: Redis 7 (Docker)
-- **Real-time**: Django Channels (WebSockets)
-- **Background Jobs**: Celery
-- **Authentication**: JWT (SimpleJWT)
+This starts:
 
-### Frontend (Coming Soon)
+- **PostgreSQL 15** (port 5432)
+  - User: flowerp
+  - Password: flowerp_pass
+  - Database: flowerp
+- **Redis 7** (port 6379)
+- **Celery Worker** (background task execution)
+- **Celery Beat** (periodic task scheduling)
 
-- React.js / Vue.js
-- WebSocket client for notifications
-- Axios for API calls
 
-## 📚 Documentation
+Access at: **http://localhost:5555**
 
-See `FlowERP_Build_Guide.md` for complete implementation guide.
+---
+
+## 📡 API Design & Real-time Integration
+
+### Key Endpoints
+
+```
+POST   /api/v1/auth/login/              # JWT Token Issued
+GET    /api/v1/auth/me/                 # Current User
+POST   /api/v1/auth/logout/             # Logout
+
+GET    /api/v1/users/                   # List Users
+POST   /api/v1/projects/                # Create Project
+GET    /api/v1/projects/                # List Projects
+GET    /api/v1/projects/{id}/           # Project Detail
+GET    /api/v1/projects/{id}/tasks/     # Project Tasks
+
+GET    /api/v1/tasks/                   # List Tasks
+POST   /api/v1/tasks/                   # Create Task
+GET    /api/v1/tasks/{id}/              # Task Detail
+PUT    /api/v1/tasks/{id}/              # Update Task
+DELETE /api/v1/tasks/{id}/              # Delete Task
+
+GET    /api/v1/notifications/           # List Notifications
+POST   /api/v1/notifications/{id}/mark-read/   # Mark as Read
+```
+
+
+
+### WebSockets (Real-time)
+
+Real-time alerts are handled via Django Channels.
+
+**Socket URL**: `ws://localhost:8000/ws/notifications/`
+
+
+---
+
+## 🗂️ Database Models
+
+| Model            | Key Fields                            | Purpose               |
+| ---------------- | ------------------------------------- | --------------------- |
+| **User**         | username, email, role, department     | Authentication & RBAC |
+| **Project**      | name, status, manager, members        | Project organization  |
+| **Task**         | title, project, assigned_to, deadline | Task tracking         |
+| **Notification** | user, message, type, is_read          | Real-time updates     |
+| **ActivityLog**  | user, action, content_type, timestamp | Audit trail           |
+
+---
+
+
+
+
+
+
+---
+
+## 📚 Resources
+
+- **API Docs**: http://localhost:8000/api/schema/swagger/
+- **Django**: https://docs.djangoproject.com/
+- **DRF**: https://www.django-rest-framework.org/
+- **Channels**: https://channels.readthedocs.io/
+- **Celery**: https://docs.celeryproject.org/
+- **React**: https://react.dev/
+- **Vite**: https://vitejs.dev/
+
+---
 
 ## 🔄 Development Status
 
 - ✅ Models & Migrations
-- ✅ JWT Authentication
+- ✅ JWT Authentication & Authorization
 - ✅ RBAC Permissions
-- 🔄 REST APIs (In Progress)
-- ⏳ WebSocket Notifications
-- ⏳ Celery Tasks
-- ⏳ Frontend Application
+- ✅ REST APIs (Full CRUD)
+- ✅ WebSocket Real-time Notifications
+- ✅ Celery Background Jobs & Scheduling
+- ✅ Docker Infrastructure
+- 🔄 Frontend (In Progress)
+- ⏳ Advanced Analytics & Reporting
 
 ---
 
-**Built for demonstrating backend development skills for Frappe Framework role.**
+
